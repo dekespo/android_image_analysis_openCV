@@ -2,15 +2,10 @@ package com.sample.dekespo.imageanalysisopencv;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
-import android.content.res.Configuration;
-import android.graphics.Matrix;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.Display;
-import android.view.Surface;
-import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
@@ -21,8 +16,6 @@ import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Mat;
-
-import java.security.Policy;
 
 public class MainActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2, View.OnClickListener {
     private static final String TAG = "OCVSample::Activity";
@@ -154,11 +147,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         Mat matGray = inputFrame.gray();
         Mat matColour = inputFrame.rgba();
 
-//        if(getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT)
-//        {
-//            rotate90(matColour, matColour, 90);
-//        }
-
         switch (_currentModeStatus)
         {
             case HISTOEQ:
@@ -173,6 +161,12 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             case INVERT:
                 invert(matGray.getNativeObjAddr());
                 break;
+            case BINARY:
+                binary(matGray.getNativeObjAddr());
+                break;
+            case GET_SHAPES:
+                getShapes(matGray.getNativeObjAddr());
+                break;
             default:
                 Log.d(TAG, "Error in camera");
         }
@@ -182,8 +176,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     private native void histEq(long matAddrGray);
     private native void salt(long matAddrGray, int nbrElem);
     private native void invert(long matAddrGray);
-    private native void rotate90(Mat input, Mat output, int degree);
-
+    private native void binary(long matAddrGray);
+    private native void getShapes(long matAddrGray);
 }
 
 
