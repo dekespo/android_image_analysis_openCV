@@ -10,6 +10,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.SeekBar;
 import android.widget.Toast;
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
@@ -20,7 +21,10 @@ import org.opencv.core.Mat;
 public class MainActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2, View.OnClickListener {
     private static final String TAG = "OCVSample::Activity";
     private CameraBridgeViewBase _cameraBridgeViewBase;
-    private ModeStatus _currentModeStatus = ModeStatus.COLOR;
+    private ModeStatus _currentModeStatus = ModeStatus.COLOUR;
+    private ColourTypeModes _currentColourType = ColourTypeModes.COLOR_RGB2GRAY;
+    private ThresholdTypeModes _currentThresholdType = ThresholdTypeModes.THRESH_BINARY;
+    private int _currentThresholdValue = 128;
 
     private BaseLoaderCallback _baseLoaderCallback = new BaseLoaderCallback(this)
     {
@@ -55,10 +59,34 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_main);
 
-        // Initialiaze the button
+        // Initialiaze the buttons
         Button modeButton = (Button) findViewById(R.id.modeButton);
         modeButton.setText(_currentModeStatus.toString());
         modeButton.setOnClickListener(this);
+        Button colourTypeButton = (Button) findViewById(R.id.colourTypeButton);
+        colourTypeButton.setText(_currentColourType.toString());
+        colourTypeButton.setOnClickListener(this);
+        colourTypeButton.setEnabled(_currentModeStatus != ModeStatus.COLOUR);
+        Button thresholdTypeButton = (Button) findViewById(R.id.thresholdTypeButton);
+        thresholdTypeButton.setText(_currentThresholdType.toString());
+        thresholdTypeButton.setEnabled(_currentModeStatus == ModeStatus.BINARY);
+        thresholdTypeButton.setOnClickListener(this);
+
+        SeekBar thresholdValueSeekBar = (SeekBar) findViewById(R.id.thresholdValueSeekBar);
+        thresholdValueSeekBar.setProgress(_currentThresholdValue);
+        thresholdValueSeekBar.setEnabled(_currentModeStatus == ModeStatus.BINARY);
+        thresholdValueSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                _currentThresholdValue = progress;
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) { }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) { }
+        });
 
         // Permissions for Android 6+
         ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.CAMERA}, 1);
@@ -71,11 +99,41 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     @Override
     public void onClick(View v)
     {
-        int size = ModeStatus.values().length;
-        int currentNum = _currentModeStatus.ordinal();
-        _currentModeStatus = ModeStatus.values()[(currentNum + 1) % size];
+        int size;
+        int currentNum;
         Button modeButton = (Button) findViewById(R.id.modeButton);
-        modeButton.setText(_currentModeStatus.toString());
+        Button colourTypeButton = (Button) findViewById(R.id.colourTypeButton);
+        Button thresholdTypeButton = (Button) findViewById(R.id.thresholdTypeButton);
+        SeekBar thresholdValueSeekBar = (SeekBar) findViewById(R.id.thresholdValueSeekBar);
+        switch ((v.getId()))
+        {
+            case R.id.modeButton:
+                size = ModeStatus.values().length;
+                currentNum = _currentModeStatus.ordinal();
+                _currentModeStatus = ModeStatus.values()[(currentNum + 1) % size];
+                modeButton.setText(_currentModeStatus.toString());
+                break;
+            case R.id.colourTypeButton:
+                size = ColourTypeModes.values().length;
+                currentNum = _currentColourType.ordinal();
+                _currentColourType = ColourTypeModes.values()[(currentNum + 1) % size];
+                colourTypeButton.setText(_currentColourType.toString());
+                break;
+            case R.id.thresholdTypeButton:
+                size = ThresholdTypeModes.values().length;
+                currentNum = _currentThresholdType.ordinal();
+                _currentThresholdType = ThresholdTypeModes.values()[(currentNum + 1) % size];
+                thresholdTypeButton.setText(_currentThresholdType.toString());
+                break;
+            case R.id.thresholdValueSeekBar:
+                break;
+            default:
+                break;
+        }
+
+        thresholdTypeButton.setEnabled(_currentModeStatus == ModeStatus.BINARY);
+        colourTypeButton.setEnabled(_currentModeStatus != ModeStatus.COLOUR);
+        thresholdValueSeekBar.setEnabled(_currentModeStatus == ModeStatus.BINARY);
     }
 
     @Override
@@ -144,40 +202,29 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame)
     {
-        Mat matGray = inputFrame.gray();
-        Mat matColour = inputFrame.rgba();
+        Mat cameraMat = inputFrame.rgba();
+        long cameraAddress = cameraMat.getNativeObjAddr();
 
+        Log.d(TAG, "Camera address = " + cameraAddress);
+        Log.d(TAG, "Camera Mat address = " + cameraMat.getNativeObjAddr());
+        Log.d(TAG, "Current Threshold Value = " + _currentThresholdValue);
         switch (_currentModeStatus)
         {
-            case HISTOEQ:
-                histEq(matGray.getNativeObjAddr());
-                break;
-            case SALT:
-                salt(matGray.getNativeObjAddr(), 2000);
-                break;
-            case COLOR:
-                matGray = matColour;
-                break;
-            case INVERT:
-                invert(matGray.getNativeObjAddr());
-                break;
+            case COLOUR:
+            case GRAY:
             case BINARY:
-                binary(matGray.getNativeObjAddr());
-                break;
+            case HISTOEQ:
+            case INVERT:
+            case SALT:
             case GET_SHAPES:
-                getShapes(matGray.getNativeObjAddr());
+                applyCameraAnalysisControl(cameraAddress, _currentModeStatus.getNumVal(), _currentColourType.getNumVal(), _currentThresholdType.getNumVal(), _currentThresholdValue, 255);
                 break;
             default:
                 Log.d(TAG, "Error in camera");
         }
-        return matGray;
+        Log.d(TAG, "Final result");
+        return cameraMat;
     }
 
-    private native void histEq(long matAddrGray);
-    private native void salt(long matAddrGray, int nbrElem);
-    private native void invert(long matAddrGray);
-    private native void binary(long matAddrGray);
-    private native void getShapes(long matAddrGray);
+    private native void applyCameraAnalysisControl(long matColourAddress, int modeState, int colourType, int thresholdtpye, int thresholdValue, int thresholdMaxValue);
 }
-
-
