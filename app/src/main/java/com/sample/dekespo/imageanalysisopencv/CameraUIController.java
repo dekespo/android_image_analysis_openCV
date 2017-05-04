@@ -7,6 +7,7 @@ import android.widget.SeekBar;
 
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.core.Mat;
+import java.util.ArrayList;
 
 class CameraUIController implements CameraBridgeViewBase.CvCameraViewListener2, View.OnClickListener
 {
@@ -14,7 +15,7 @@ class CameraUIController implements CameraBridgeViewBase.CvCameraViewListener2, 
 
     private CameraBridgeViewBase _cameraBridgeViewBase;
     private ModeStatus _currentModeStatus = ModeStatus.COLOUR;
-    private ColourTypeModes _currentColourType = ColourTypeModes.COLOR_RGB2GRAY;
+    private ColourTypeModes _currentColourType = ColourTypeModes.COLOR_RGB2RGBA;
     private ThresholdTypeModes _currentThresholdType = ThresholdTypeModes.THRESH_BINARY;
     private int _currentThresholdValue = 128;
 
@@ -43,9 +44,33 @@ class CameraUIController implements CameraBridgeViewBase.CvCameraViewListener2, 
 
     private void ControlEnableness()
     {
-        _thresholdTypeButton.setEnabled(_currentModeStatus == ModeStatus.BINARY);
-        _colourTypeButton.setEnabled(_currentModeStatus != ModeStatus.COLOUR);
-        _thresholdValueSeekBar.setEnabled(_currentModeStatus == ModeStatus.BINARY);
+        _thresholdTypeButton.setEnabled(ShouldThresholdTypeButtonBeEnable());
+        _colourTypeButton.setEnabled(ShouldColourTypeButtonBeEnable());
+        _thresholdValueSeekBar.setEnabled(ShouldThresholdValueSeekBarBeEnable());
+    }
+
+    private boolean ShouldColourTypeButtonBeEnable()
+    {
+        boolean modeCondition = _currentModeStatus != ModeStatus.HISTOEQ && _currentModeStatus != ModeStatus.GET_SHAPES ;
+        boolean colourTypeCondition = true;
+        boolean thresholdTypeCondition = true;
+        return modeCondition && colourTypeCondition && thresholdTypeCondition;
+    }
+
+    private boolean ShouldThresholdValueSeekBarBeEnable()
+    {
+        boolean modeCondition = _currentModeStatus == ModeStatus.BINARY || _currentModeStatus == ModeStatus.GET_SHAPES;
+        boolean colourTypeCondition = true;
+        boolean thresholdTypeCondition = _currentThresholdType != ThresholdTypeModes.THRESH_OTSU && _currentThresholdType != ThresholdTypeModes.THRESH_TRIANGLE;
+        return modeCondition && colourTypeCondition && thresholdTypeCondition;
+    }
+
+    private boolean ShouldThresholdTypeButtonBeEnable()
+    {
+        boolean modeCondition = _currentModeStatus == ModeStatus.BINARY || _currentModeStatus == ModeStatus.GET_SHAPES;
+        boolean colourTypeCondition = true;
+        boolean thresholdTypeCondition = true;
+        return modeCondition && colourTypeCondition && thresholdTypeCondition;
     }
 
     // Initialiaze the buttons
@@ -56,15 +81,15 @@ class CameraUIController implements CameraBridgeViewBase.CvCameraViewListener2, 
         _colourTypeButton = (Button) colourTypeButton;
         _colourTypeButton.setText(_currentColourType.toString());
         _colourTypeButton.setOnClickListener(this);
-        _colourTypeButton.setEnabled(_currentModeStatus != ModeStatus.COLOUR);
+        _colourTypeButton.setEnabled(ShouldColourTypeButtonBeEnable());
         _thresholdTypeButton = (Button) thresholdTypeButton;
         _thresholdTypeButton.setText(_currentThresholdType.toString());
-        _thresholdTypeButton.setEnabled(_currentModeStatus == ModeStatus.BINARY);
+        _thresholdTypeButton.setEnabled(ShouldThresholdTypeButtonBeEnable());
         _thresholdTypeButton.setOnClickListener(this);
 
         _thresholdValueSeekBar = (SeekBar) thresholdValueSeekBar;
         _thresholdValueSeekBar.setProgress(_currentThresholdValue);
-        _thresholdValueSeekBar.setEnabled(_currentModeStatus == ModeStatus.BINARY);
+        _thresholdValueSeekBar.setEnabled(ShouldThresholdValueSeekBarBeEnable());
         _thresholdValueSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -91,6 +116,15 @@ class CameraUIController implements CameraBridgeViewBase.CvCameraViewListener2, 
                 size = ModeStatus.values().length;
                 currentNum = _currentModeStatus.ordinal();
                  _currentModeStatus = ModeStatus.values()[(currentNum + 1) % size];
+                ArrayList<ModeStatus> group = new ArrayList<ModeStatus>()
+                {{
+                    add(ModeStatus.HISTOEQ);
+//                    add(ModeStatus.GET_SHAPES);
+                }};
+                if(group.contains(_currentModeStatus))
+                {
+                    _currentColourType = ColourTypeModes.COLOR_RGB2GRAY;
+                }
                 UpdateButtonName(ButtonTypes.MODE);
                 break;
             case R.id.colourTypeButton:

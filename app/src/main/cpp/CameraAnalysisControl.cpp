@@ -4,6 +4,10 @@ CameraAnalysisControl::~CameraAnalysisControl() {}
 
 CameraAnalysisControl::CameraAnalysisControl(long int _addressofMat, int modeState, int _colourType, int _thresholdType, int _thresholdValue, int thresholdMaxValue) : m_MatCamera(*(cv::Mat *) _addressofMat)
 {
+
+    m_width = m_MatCamera.rows;
+    m_height = m_MatCamera.cols;
+
     m_colourType = (cv::ColorConversionCodes)_colourType;
     m_thresholdType = (cv::ThresholdTypes)_thresholdType;
     m_thresholdValue = _thresholdValue;
@@ -40,12 +44,17 @@ CameraAnalysisControl::CameraAnalysisControl(long int _addressofMat, int modeSta
 
 void CameraAnalysisControl::m_updateMatColour()
 {
-    // do nothing
+    cv::cvtColor(m_MatCamera, m_MatCamera, m_colourType);
 }
 
-void CameraAnalysisControl::m_updateMatGray()
+void CameraAnalysisControl::m_updateMatGray() // TODO: remove it completely?
 {
     cv::cvtColor(m_MatCamera, m_MatCamera, m_colourType);
+}
+
+void CameraAnalysisControl::m_updateMatGray(cv::Mat &output)
+{
+    cv::cvtColor(m_MatCamera, output, m_colourType);
 }
 
 void CameraAnalysisControl::m_updateMatBinary()
@@ -71,23 +80,24 @@ void CameraAnalysisControl::m_updateMatSalt()
     m_updateMatGray();
     for (int k = 0; k < m_thresholdMaxValue / 3; k++)
     {
-        int i = rand() % m_MatCamera.cols;
-        int j = rand() % m_MatCamera.rows;
+        int i = rand() % m_height;
+        int j = rand() % m_width;
         m_MatCamera.at<uchar>(j, i) = 255;
     }
 }
 
 void CameraAnalysisControl::m_updateMatGetShapes()
 {
-    m_updateMatGray();
-    findCircles(); // TODO: m_MatCamera should be separated here
-//    findRectangles();
+    // TODO Check CameraUIController.java for different cases
+        findCircles();
+        findRectangles();
 }
 
 void CameraAnalysisControl::findCircles()
 {
     cv::Mat hiddenMat;
-    cv::medianBlur(m_MatCamera, hiddenMat, 5);
+    m_updateMatGray(hiddenMat);
+    cv::medianBlur(hiddenMat, hiddenMat, 5);
 
     std::vector<cv::Vec3f>  circles;
 
@@ -102,15 +112,19 @@ void CameraAnalysisControl::findCircles()
 void CameraAnalysisControl::findRectangles()
 {
     cv::Mat hiddenMat;
-    cv::threshold(m_MatCamera, hiddenMat, 160, 255 , 1); // TODO: bind this to the binary method
+    m_updateMatGray(hiddenMat);
+    cv::threshold(hiddenMat, hiddenMat, m_thresholdValue, m_thresholdMaxValue, m_thresholdType);
 
     std::vector<std::vector<cv::Point>> contours;
     cv::findContours(hiddenMat, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE); // TODO: new parameters
+    double minimumAreaToShow = m_width * m_height / 20;
+    double maximumAreaToShow = m_width * m_height / 4;
 
     for(int i = 0; i < contours.size(); i++)
     {
+        double currentContourArea = cv::contourArea(contours[i]);
 
-        if(cv::contourArea(contours[i]) > 3000)
+        if(minimumAreaToShow <  currentContourArea && currentContourArea < maximumAreaToShow)
         {
             cv::RotatedRect rotatedRect = cv::minAreaRect(contours[i]);
             cv::Point2f rectPoints[4];

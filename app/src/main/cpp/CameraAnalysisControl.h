@@ -10,6 +10,7 @@ class CameraAnalysisControl
 {
 private:
     cv::Mat& m_MatCamera;
+    int m_width, m_height;
 
     cv::ColorConversionCodes m_colourType;
     cv::ThresholdTypes m_thresholdType;
@@ -18,6 +19,7 @@ private:
 
     void m_updateMatColour();
     void m_updateMatGray();
+    void m_updateMatGray(cv::Mat &);
     void m_updateMatBinary();
     void m_updateMatHistoEq();
     void m_updateMatInvert();
