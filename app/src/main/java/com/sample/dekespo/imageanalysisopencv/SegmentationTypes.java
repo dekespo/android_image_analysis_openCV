@@ -1,17 +1,14 @@
 package com.sample.dekespo.imageanalysisopencv;
 
-public enum ModeStatus {
-    COLOUR(0),
-//    GRAY(1),
-    BINARY(2),
-    HISTOEQ(3),
-    INVERT(4),
-    SALT(5),
-    SEGMENTATION(6);
+public enum SegmentationTypes {
+    CIRCLES(0),
+    RECTANGLES(1),
+    TRIANGLES(2),
+    ALL(3);
 
     private int numVal;
 
-    ModeStatus(int numVal) {
+    SegmentationTypes(int numVal) {
         this.numVal = numVal;
     }
 
@@ -19,4 +16,3 @@ public enum ModeStatus {
         return numVal;
     }
 }
-

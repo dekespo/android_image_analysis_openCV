@@ -17,17 +17,19 @@ private:
     int m_thresholdValue;
     int m_thresholdMaxValue;
 
-    void m_updateMatColour();
+    void m_autoUpdateMatColour();
     void m_updateMatGray();
-    void m_updateMatGray(cv::Mat &);
+    void m_updateMatToColour(cv::Mat &);
+    void m_updateMatToGray(cv::Mat &);
     void m_updateMatBinary();
     void m_updateMatHistoEq();
     void m_updateMatInvert();
     void m_updateMatSalt();
-    void m_updateMatGetShapes();
+    void m_updateMatSegmentations(int);
 
     void findCircles();
     void findRectangles();
+    void findTriangles();
 
     enum MODESTATE
     {
@@ -37,11 +39,19 @@ private:
         HISTOEQ = 3,
         INVERT = 4,
         SALT = 5,
-        GET_SHAPES = 6
+        SEGMENTATION = 6
+    };
+
+    enum SEGMENTATIONTYPE
+    {
+        CIRCLES = 0,
+        RECTANGLES = 1,
+        TRIANGLES = 2,
+        ALL = 3
     };
 
 public:
-    CameraAnalysisControl(long int, int, int, int, int, int);
+    CameraAnalysisControl(long int, int, int, int, int, int, int);
     ~CameraAnalysisControl();
 };
 

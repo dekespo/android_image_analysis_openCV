@@ -2,7 +2,7 @@
 
 CameraAnalysisControl::~CameraAnalysisControl() {}
 
-CameraAnalysisControl::CameraAnalysisControl(long int _addressofMat, int modeState, int _colourType, int _thresholdType, int _thresholdValue, int thresholdMaxValue) : m_MatCamera(*(cv::Mat *) _addressofMat)
+CameraAnalysisControl::CameraAnalysisControl(long int _addressofMat, int modeState, int _colourType, int _thresholdType, int _thresholdValue, int thresholdMaxValue, int segmentationType) : m_MatCamera(*(cv::Mat *) _addressofMat)
 {
 
     m_width = m_MatCamera.rows;
@@ -16,11 +16,11 @@ CameraAnalysisControl::CameraAnalysisControl(long int _addressofMat, int modeSta
     switch (modeState)
     {
         case MODESTATE::COLOUR:
-            m_updateMatColour();
+            m_autoUpdateMatColour();
             break;
-        case MODESTATE::GRAY:
-            m_updateMatGray();
-            break;
+//        case MODESTATE::GRAY:
+//            m_updateMatGray();
+//            break;
         case MODESTATE::BINARY:
             m_updateMatBinary();
             break;
@@ -33,8 +33,8 @@ CameraAnalysisControl::CameraAnalysisControl(long int _addressofMat, int modeSta
         case MODESTATE::SALT:
             m_updateMatSalt();
             break;
-        case MODESTATE::GET_SHAPES:
-            m_updateMatGetShapes();
+        case MODESTATE::SEGMENTATION:
+            m_updateMatSegmentations(segmentationType);
             break;
         default:
             // ERROR
@@ -42,42 +42,42 @@ CameraAnalysisControl::CameraAnalysisControl(long int _addressofMat, int modeSta
     }
 }
 
-void CameraAnalysisControl::m_updateMatColour()
+void CameraAnalysisControl::m_autoUpdateMatColour()
 {
     cv::cvtColor(m_MatCamera, m_MatCamera, m_colourType);
 }
 
-void CameraAnalysisControl::m_updateMatGray() // TODO: remove it completely?
+void CameraAnalysisControl::m_updateMatToGray(cv::Mat &output)
 {
-    cv::cvtColor(m_MatCamera, m_MatCamera, m_colourType);
+    cv::cvtColor(m_MatCamera, output, cv::ColorConversionCodes::COLOR_RGB2GRAY);
 }
 
-void CameraAnalysisControl::m_updateMatGray(cv::Mat &output)
+void CameraAnalysisControl::m_updateMatToColour(cv::Mat &output)
 {
     cv::cvtColor(m_MatCamera, output, m_colourType);
 }
 
 void CameraAnalysisControl::m_updateMatBinary()
 {
-    m_updateMatGray();
+    m_updateMatToColour(m_MatCamera);
     cv::threshold(m_MatCamera, m_MatCamera, m_thresholdValue, m_thresholdMaxValue, m_thresholdType);
 }
 
 void CameraAnalysisControl::m_updateMatHistoEq()
 {
-    m_updateMatGray();
+    m_updateMatToGray(m_MatCamera);
     cv::equalizeHist(m_MatCamera, m_MatCamera);
 }
 
 void CameraAnalysisControl::m_updateMatInvert()
 {
-    m_updateMatGray();
+    m_updateMatToColour(m_MatCamera);
     cv::bitwise_not(m_MatCamera, m_MatCamera);
 }
 
 void CameraAnalysisControl::m_updateMatSalt()
 {
-    m_updateMatGray();
+    m_updateMatToColour(m_MatCamera);
     for (int k = 0; k < m_thresholdMaxValue / 3; k++)
     {
         int i = rand() % m_height;
@@ -86,17 +86,33 @@ void CameraAnalysisControl::m_updateMatSalt()
     }
 }
 
-void CameraAnalysisControl::m_updateMatGetShapes()
-{
-    // TODO Check CameraUIController.java for different cases
-        findCircles();
-        findRectangles();
+void CameraAnalysisControl::m_updateMatSegmentations(int segmentationType){
+    switch(segmentationType)
+    {
+        case SEGMENTATIONTYPE::CIRCLES:
+            findCircles();
+            break;
+        case SEGMENTATIONTYPE::RECTANGLES:
+            findRectangles();
+            break;
+        case SEGMENTATIONTYPE::TRIANGLES:
+            findTriangles();
+            break;
+        case SEGMENTATIONTYPE::ALL:
+            findCircles();
+            findRectangles();
+            findTriangles();
+            break;
+        default:
+            // ERROR
+            break;
+    }
 }
 
 void CameraAnalysisControl::findCircles()
 {
     cv::Mat hiddenMat;
-    m_updateMatGray(hiddenMat);
+    m_updateMatToGray(hiddenMat);
     cv::medianBlur(hiddenMat, hiddenMat, 5);
 
     std::vector<cv::Vec3f>  circles;
@@ -112,7 +128,7 @@ void CameraAnalysisControl::findCircles()
 void CameraAnalysisControl::findRectangles()
 {
     cv::Mat hiddenMat;
-    m_updateMatGray(hiddenMat);
+    m_updateMatToGray(hiddenMat);
     cv::threshold(hiddenMat, hiddenMat, m_thresholdValue, m_thresholdMaxValue, m_thresholdType);
 
     std::vector<std::vector<cv::Point>> contours;
@@ -134,5 +150,33 @@ void CameraAnalysisControl::findRectangles()
                 cv::line(m_MatCamera, rectPoints[j], rectPoints[(j+1)%4], cv::Scalar(0, 255, 0), 3);
         }
     }
+}
 
+void CameraAnalysisControl::findTriangles()
+{
+    cv::Mat hiddenMat;
+    m_updateMatToGray(hiddenMat);
+    cv::threshold(hiddenMat, hiddenMat, m_thresholdValue, m_thresholdMaxValue, m_thresholdType);
+//    cv::Canny(hiddenMat, hiddenMat, 0, 50, 5); // TODO: this method is also useful
+
+    std::vector<std::vector<cv::Point> > contours;
+    cv::findContours(hiddenMat.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+
+    std::vector<cv::Point2i> approx;
+
+    double minimumArea = m_width * m_height / 100;
+
+    for (int i = 0; i < contours.size(); i++)
+    {
+        cv::approxPolyDP(cv::Mat(contours[i]), approx, cv::arcLength(cv::Mat(contours[i]), true)*0.02, true);
+
+        if (std::fabs(cv::contourArea(contours[i])) < minimumArea || !cv::isContourConvex(approx))
+            continue;
+
+        if (approx.size() == 3)
+        {
+            for(unsigned int j = 0; j < 3; j++)
+                cv::line(m_MatCamera, approx[j], approx[(j+1)%3], cv::Scalar(255, 0, 0), 3);
+        }
+    }
 }
