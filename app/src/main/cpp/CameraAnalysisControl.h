@@ -4,7 +4,6 @@
 #include <opencv2/core/mat.hpp>
 #include <opencv2/imgproc/types_c.h>
 #include <opencv2/imgproc.hpp>
-#include <jni.h>
 
 class CameraAnalysisControl
 {
@@ -30,6 +29,7 @@ private:
     void findCircles();
     void findRectangles();
     void findTriangles();
+    void findLargestObject();
 
     enum MODESTATE
     {
@@ -47,7 +47,9 @@ private:
         CIRCLES = 0,
         RECTANGLES = 1,
         TRIANGLES = 2,
-        ALL = 3
+        ALL = 3,
+        LARGEST_OBJECT = 4
+
     };
 
 public:

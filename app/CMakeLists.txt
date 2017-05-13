@@ -4,7 +4,7 @@ set(CMAKE_VERBOSE_MAKEFILE on)
 
 # Add libraries
 add_library(lib_opencv SHARED IMPORTED)
-add_library(native-lib SHARED src/main/cpp/native-lib.cpp src/main/cpp/CameraAnalysisControl.h src/main/cpp/CameraAnalysisControl.cpp)
+add_library(native-lib SHARED src/main/cpp/native-lib.cpp src/main/cpp/CameraAnalysisControl.h src/main/cpp/CameraAnalysisControl.cpp src/main/cpp/helper_functions.cpp src/main/cpp/helper_functions.h)
 
 # Add ANDROID abis to lib_opencv library
 set_target_properties(lib_opencv PROPERTIES IMPORTED_LOCATION C:/Users/deniz/Desktop/Android_Apps/opencv-3.2.0-android-sdk/OpenCV-android-sdk/sdk/native/libs/${ANDROID_ABI}/libopencv_java3.so)

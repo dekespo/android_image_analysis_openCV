@@ -1,4 +1,5 @@
 #include "CameraAnalysisControl.h"
+#include "helper_functions.h"
 
 CameraAnalysisControl::~CameraAnalysisControl() {}
 
@@ -103,6 +104,9 @@ void CameraAnalysisControl::m_updateMatSegmentations(int segmentationType){
             findRectangles();
             findTriangles();
             break;
+        case SEGMENTATIONTYPE::LARGEST_OBJECT:
+            findLargestObject();
+            break;
         default:
             // ERROR
             break;
@@ -179,4 +183,51 @@ void CameraAnalysisControl::findTriangles()
                 cv::line(m_MatCamera, approx[j], approx[(j+1)%3], cv::Scalar(255, 0, 0), 3);
         }
     }
+}
+
+void CameraAnalysisControl::findLargestObject()
+{
+    cv::Mat hiddenMat;
+    m_updateMatToGray(hiddenMat);
+    cv::threshold(hiddenMat, hiddenMat, m_thresholdValue, m_thresholdMaxValue, m_thresholdType);
+
+    std::vector<std::vector<cv::Point>> contours;
+    cv::findContours(hiddenMat.clone(), contours, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+
+    std::vector<cv::Point> maxContour;
+    if(contours.size() > 1)
+        maxContour = *std::max_element(contours.begin(), contours.end(), helper_functions::compareArea);
+    else if(contours.size() == 1)
+        maxContour = contours[0];
+
+    /// Draw the largest contour
+    int maxContourSize = maxContour.size();
+    for(unsigned int j = 0; j < maxContourSize; j++)
+        cv::line(m_MatCamera, maxContour[j], maxContour[(j+1)%maxContourSize], cv::Scalar(255, 0, 0), 3);
+
+//    std::vector<int> hullsIndices;
+//    std::vector<cv::Vec4i> defects;
+//    cv::convexHull(maxContour, hullsIndices);
+//    cv::convexityDefects(maxContour, hullsIndices, defects);
+//    /// Draw Hulls
+//
+//
+//
+//    /// Draw convexityDefects
+//    for(const cv::Vec4i& defVec : defects)
+//    {
+//        float depth = defVec[3] / 256;
+//        if (depth > 10) //  filter defects by depth, e.g more than 10
+//        {
+//            int startidx = defVec[0]; cv::Point ptStart(maxContour[startidx]);
+//            int endidx = defVec[1]; cv::Point ptEnd(maxContour[endidx]);
+//            int faridx = defVec[2]; cv::Point ptFar(maxContour[faridx]);
+//
+//            line(m_MatCamera, ptStart, ptEnd, cv::Scalar(0, 255, 0), 2);
+//            line(m_MatCamera, ptStart, ptFar, cv::Scalar(0, 255, 0), 2);
+//            line(m_MatCamera, ptEnd, ptFar, cv::Scalar(0, 255, 0), 2);
+//            circle(m_MatCamera, ptFar, 4, cv::Scalar(0, 255, 0), 3);
+//        }
+//    }
+
 }
