@@ -9,14 +9,14 @@ import android.util.Log;
 import android.view.SurfaceView;
 import android.view.WindowManager;
 import android.widget.Toast;
+
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 
-public class MainActivity extends AppCompatActivity{
-    private static final String TAG = "OCVSample::Activity";
-
+public class MainActivity extends AppCompatActivity
+{
     private CameraUIController _cameraUIController;
 
     private BaseLoaderCallback _baseLoaderCallback = new BaseLoaderCallback(this)
@@ -28,7 +28,7 @@ public class MainActivity extends AppCompatActivity{
             {
                 case LoaderCallbackInterface.SUCCESS:
                 {
-                    Log.i(TAG, "OpenCV loaded successfully");
+                    Log.i(Constants.LOG_MAIN_ACTIVIY, "OpenCV loaded successfully");
                     // Load ndk built module, as specified in moduleName in build.gradle
                     // after opencv initialization
                     System.loadLibrary("native-lib");
@@ -51,12 +51,13 @@ public class MainActivity extends AppCompatActivity{
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_main);
 
-        _cameraUIController = new CameraUIController(findViewById(R.id.modeButton), findViewById(R.id.colourTypeButton), findViewById(R.id.thresholdTypeButton), findViewById(R.id.thresholdValueSeekBar));
+        _cameraUIController = new CameraUIController(MainActivity.this);
 
         // Permissions for Android 6+
         ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.CAMERA}, 1);
 
         _cameraUIController.LoadCamera((CameraBridgeViewBase) findViewById(R.id.main_surface), SurfaceView.VISIBLE);
+
     }
 
     @Override
@@ -72,10 +73,12 @@ public class MainActivity extends AppCompatActivity{
         super.onResume();
         if (!OpenCVLoader.initDebug())
         {
-            Log.d(TAG, "Internal OpenCV library not found. Using OpenCV Manager for initialization");
+            Log.d(Constants.LOG_MAIN_ACTIVIY, "Internal OpenCV library not found. Using OpenCV Manager for initialization");
             OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_2_0, this, _baseLoaderCallback);
-        } else {
-            Log.d(TAG, "OpenCV library found inside package. Using it!");
+        }
+        else
+        {
+            Log.d(Constants.LOG_MAIN_ACTIVIY, "OpenCV library found inside package. Using it!");
             _baseLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
         }
     }
@@ -92,7 +95,9 @@ public class MainActivity extends AppCompatActivity{
                 {
                     // permission was granted, yay! Do the
                     // contacts-related task you need to do.
-                } else {
+                }
+                else
+                {
                     // permission denied, boo! Disable the
                     // functionality that depends on this permission.
                     Toast.makeText(MainActivity.this, "Permission denied to read your External storage", Toast.LENGTH_SHORT).show();

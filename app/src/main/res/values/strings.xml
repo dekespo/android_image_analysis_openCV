@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">ImageAnalysisOpenCV</string>
+    <string name="go_back">Go Back</string>
 </resources>

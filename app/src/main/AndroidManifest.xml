@@ -6,6 +6,8 @@
     <uses-feature android:name="android.hardware.camera"/>
     <uses-feature android:name="android.hardware.camera.autofocus"/>
 
+    <!--<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="18" />-->
+
     <!--<uses-feature android:name="android.hardware.camera.front"/>-->
     <!--<uses-feature android:name="android.hardware.camera.front.autofocus"/>-->
 
@@ -18,12 +20,18 @@
         android:theme="@style/AppTheme">
         <activity android:name=".MainActivity"
                   android:screenOrientation="landscape">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
         </activity>
+
+        <activity android:name=".PhotoUIControllerActivity"
+                  android:screenOrientation="landscape">
+        </activity>
+
     </application>
 
 </manifest>

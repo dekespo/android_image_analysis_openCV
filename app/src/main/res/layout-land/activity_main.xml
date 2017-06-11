@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/activity_main"
     android:layout_width="match_parent"
@@ -11,9 +12,9 @@
     tools:context="com.sample.dekespo.imageanalysisopencv.MainActivity">
 
     <org.opencv.android.JavaCameraView
+        android:id="@+id/main_surface"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:id="@+id/main_surface"
         android:layout_alignParentTop="true"
         android:layout_above="@+id/modeButton"
         android:layout_alignParentStart="true" />
@@ -49,6 +50,7 @@
         android:layout_below="@+id/main_surface"
         android:layout_alignParentEnd="true"
         android:layout_toEndOf="@+id/thresholdTypeButton" />
+
     <!--android:text="Change Mode"-->
 </RelativeLayout>
 
