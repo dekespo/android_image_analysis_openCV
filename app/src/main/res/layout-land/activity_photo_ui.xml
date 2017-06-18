@@ -20,9 +20,19 @@
         android:id="@+id/button_goBack"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="26dp"
+        android:layout_marginBottom="28dp"
         android:text="@string/go_back"
         android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"/>
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="191dp"/>
+
+    <Button
+        android:id="@+id/button_save"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/save"
+        android:layout_below="@+id/photoImageView"
+        android:layout_toStartOf="@+id/button_goBack"
+        android:layout_marginEnd="15dp"/>
 
 </RelativeLayout>
